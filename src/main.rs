@@ -67,11 +67,11 @@ fn show_next_prayer() -> Result<()> {
     let time_str = next.time.format("%H:%M").to_string();
     let duration_str = prayer::format_duration(next.duration);
 
-    // Create left side (prayer times)
-    let left_lines = create_prayer_times_display(&config, &next, &time_str, &duration_str);
+    // Create left side (mosque art)
+    let left_lines = get_mosque_art_lines();
 
-    // Create right side (mosque art)
-    let right_lines = get_mosque_art_lines();
+    // Create right side (prayer times)
+    let right_lines = create_prayer_times_display(&config, &next, &time_str, &duration_str);
 
     // Print side by side
     println!();
@@ -151,7 +151,7 @@ fn create_prayer_times_display(
 
 fn print_side_by_side(left: &[String], right: &[String]) {
     let max_lines = left.len().max(right.len());
-    let left_width: usize = 40;
+    let left_width: usize = 18;
 
     for i in 0..max_lines {
         let left_line = left.get(i).map(|s| s.as_str()).unwrap_or("");
@@ -190,45 +190,25 @@ fn strip_ansi(s: &str) -> String {
 
 fn get_mosque_art_lines() -> Vec<String> {
     // Colors
-    let cyan = "\x1b[36m";
     let yellow = "\x1b[33m";
     let green = "\x1b[32m";
+    let cyan = "\x1b[36m";
     let bright_yellow = "\x1b[93m";
-    let bright_cyan = "\x1b[96m";
-    let bright_green = "\x1b[92m";
     let reset = "\x1b[0m";
 
     vec![
-        format!("{}         ☪{}", bright_yellow, reset),
-        format!("{}        ═══{}", yellow, reset),
-        format!("{}       ╱   ╲{}", yellow, reset),
-        format!("{}      │ ░░░ │{}", yellow, reset),
-        format!("{}      ╰─────╯{}", yellow, reset),
-        format!("{}     ╱───────╲{}", bright_yellow, reset),
-        format!("{}    ╱ {} ☪   ☪ {} ╲{}", green, bright_cyan, green, reset),
-        format!(
-            "{}   │ {}═════════{} │{}",
-            green, bright_green, green, reset
-        ),
-        format!(
-            "{}   │ {}║       ║{} │{}",
-            green, bright_green, green, reset
-        ),
-        format!("{}   │ {}║  ▓▓▓  ║{} │{}", green, cyan, green, reset),
-        format!("{}  ╱══╧═══════╧══╲{}", green, reset),
-        format!(
-            "{} │  {}┌─────────┐{}  │{}",
-            green, bright_green, green, reset
-        ),
-        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
-        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
-        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
-        format!(
-            "{} │  {}╰─────────╯{}  │{}",
-            green, bright_green, green, reset
-        ),
-        format!("{}╱══════════════════╲{}", green, reset),
-        format!("{}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{}", green, reset),
+        format!("      {}☪{}", bright_yellow, reset),
+        format!("     {}███{}", yellow, reset),
+        format!("    {}█████{}", yellow, reset),
+        format!("   {}███████{}", green, reset),
+        format!("  {} ███{}█{}███{}", green, cyan, green, reset),
+        format!("  {} ███{}█{}███{}", green, cyan, green, reset),
+        format!(" {}█████████{}", green, reset),
+        format!("  {} ███████{}", green, reset),
+        format!("   {}█████{}", cyan, reset),
+        format!("   {}█████{}", cyan, reset),
+        format!("   {}█████{}", cyan, reset),
+        format!(" {}█████████{}", green, reset),
         String::new(),
     ]
 }
