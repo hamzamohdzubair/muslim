@@ -64,64 +64,173 @@ fn show_next_prayer() -> Result<()> {
         now,
     );
 
-    // Display beautiful mosque ASCII art
-    println!("\n{}", get_mosque_art());
-    println!();
-
-    let time_str = next.time.format("%H:%M");
+    let time_str = next.time.format("%H:%M").to_string();
     let duration_str = prayer::format_duration(next.duration);
 
-    if next.is_tomorrow {
-        println!("Next prayer: {} at {} (tomorrow)", next.prayer, time_str);
-    } else {
-        println!("Next prayer: {} at {}", next.prayer, time_str);
-    }
-    println!("Time remaining: {}", duration_str);
+    // Create left side (prayer times)
+    let left_lines = create_prayer_times_display(&config, &next, &time_str, &duration_str);
 
-    // Display all prayer times
-    println!("\n╭─────────────────────────────╮");
-    println!("│    Today's Prayer Times     │");
-    println!("├─────────────────────────────┤");
-    println!("│  Fajr    {}  │", format_time_display(config.prayers.fajr));
-    println!(
-        "│  Dhuhr   {}  │",
-        format_time_display(config.prayers.dhuhr)
-    );
-    println!("│  Asr     {}  │", format_time_display(config.prayers.asr));
-    println!(
-        "│  Maghrib {}  │",
-        format_time_display(config.prayers.maghrib)
-    );
-    println!("│  Isha    {}  │", format_time_display(config.prayers.isha));
-    println!("╰─────────────────────────────╯\n");
+    // Create right side (mosque art)
+    let right_lines = get_mosque_art_lines();
+
+    // Print side by side
+    println!();
+    print_side_by_side(&left_lines, &right_lines);
+    println!();
 
     Ok(())
 }
 
-fn get_mosque_art() -> &'static str {
-    r#"
-              ✦               ✧
-               ║               ║
-             ┌─╨─┐           ┌─╨─┐
-             │ ◆ │           │ ◆ │
-          ╔══╧═══╧══╗     ╔══╧═══╧══╗
-          ║  ╱───╲  ║     ║  ╱───╲  ║
-          ║ │     │ ║     ║ │     │ ║
-          ║ │     │ ║     ║ │     │ ║
-       ╔══╩═╪═════╪═╩═════╩═╪═════╪═╩══╗
-       ║    │     │    ✦    │     │    ║
-       ║    │ ┌─┐ │   ║║║   │ ┌─┐ │    ║
-       ║    │ │▓│ │  ┌╨╨╨┐  │ │▓│ │    ║
-       ║    │ │▓│ │  │ ◆ │  │ │▓│ │    ║
-       ║    │ └─┘ │  └───┘  │ └─┘ │    ║
-       ║    ╰─────╯         ╰─────╯    ║
-       ║  ╱─────────────────────────╲  ║
-       ║ │  ┌───┐         ┌───┐     │ ║
-       ║ │  │ ▓ │         │ ▓ │     │ ║
-       ║ │  └───┘         └───┘     │ ║
-       ╚═╧═══════════════════════════╧═╝
-          ╰───────────────────────────╯
-    "#
+fn create_prayer_times_display(
+    config: &config::Config,
+    next: &prayer::NextPrayer,
+    time_str: &str,
+    duration_str: &str,
+) -> Vec<String> {
+    let mut lines = Vec::new();
+
+    // Colors
+    let cyan = "\x1b[36m";
+    let green = "\x1b[32m";
+    let yellow = "\x1b[33m";
+    let bold = "\x1b[1m";
+    let reset = "\x1b[0m";
+    let dim = "\x1b[2m";
+
+    lines.push(String::new());
+    lines.push(format!("{}{}  Prayer Times{}", bold, green, reset));
+    lines.push(format!("{}  ─────────────{}", dim, reset));
+    lines.push(String::new());
+
+    // Next prayer highlight
+    if next.is_tomorrow {
+        lines.push(format!(
+            "  {}▶ Next:{} {} at {} {}(tomorrow){}",
+            yellow, reset, next.prayer, time_str, dim, reset
+        ));
+    } else {
+        lines.push(format!(
+            "  {}▶ Next:{} {} at {}",
+            yellow, reset, next.prayer, time_str
+        ));
+    }
+    lines.push(format!(
+        "  {}  Time remaining: {}{}",
+        dim, duration_str, reset
+    ));
+    lines.push(String::new());
+    lines.push(format!("{}  Today's Schedule{}", bold, reset));
+    lines.push(format!("{}  ───────────────{}", dim, reset));
+
+    // Prayer times list
+    let prayers = [
+        ("Fajr", config.prayers.fajr, prayer::Prayer::Fajr),
+        ("Dhuhr", config.prayers.dhuhr, prayer::Prayer::Dhuhr),
+        ("Asr", config.prayers.asr, prayer::Prayer::Asr),
+        ("Maghrib", config.prayers.maghrib, prayer::Prayer::Maghrib),
+        ("Isha", config.prayers.isha, prayer::Prayer::Isha),
+    ];
+
+    for (name, time, prayer_type) in prayers {
+        let time_display = format_time_display(time);
+        let is_next = next.prayer == prayer_type && !next.is_tomorrow;
+
+        if is_next {
+            lines.push(format!(
+                "  {}{} ● {:<8} {}{}{}",
+                bold, cyan, name, time_display, reset, cyan
+            ));
+        } else {
+            lines.push(format!("  {}  {:<8} {}{}", dim, name, time_display, reset));
+        }
+    }
+
+    lines.push(String::new());
+    lines
+}
+
+fn print_side_by_side(left: &[String], right: &[String]) {
+    let max_lines = left.len().max(right.len());
+    let left_width: usize = 40;
+
+    for i in 0..max_lines {
+        let left_line = left.get(i).map(|s| s.as_str()).unwrap_or("");
+        let right_line = right.get(i).map(|s| s.as_str()).unwrap_or("");
+
+        // Strip ANSI codes for width calculation
+        let left_display_width = strip_ansi(left_line).len();
+        let padding = left_width.saturating_sub(left_display_width);
+
+        println!("{}{}{}", left_line, " ".repeat(padding), right_line);
+    }
+}
+
+fn strip_ansi(s: &str) -> String {
+    let mut result = String::new();
+    let mut chars = s.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if ch == '\x1b' {
+            // Skip ANSI escape sequence
+            if chars.peek() == Some(&'[') {
+                chars.next();
+                for c in chars.by_ref() {
+                    if c.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+
+    result
+}
+
+fn get_mosque_art_lines() -> Vec<String> {
+    // Colors
+    let cyan = "\x1b[36m";
+    let yellow = "\x1b[33m";
+    let green = "\x1b[32m";
+    let bright_yellow = "\x1b[93m";
+    let bright_cyan = "\x1b[96m";
+    let bright_green = "\x1b[92m";
+    let reset = "\x1b[0m";
+
+    vec![
+        format!("{}         ☪{}", bright_yellow, reset),
+        format!("{}        ═══{}", yellow, reset),
+        format!("{}       ╱   ╲{}", yellow, reset),
+        format!("{}      │ ░░░ │{}", yellow, reset),
+        format!("{}      ╰─────╯{}", yellow, reset),
+        format!("{}     ╱───────╲{}", bright_yellow, reset),
+        format!("{}    ╱ {} ☪   ☪ {} ╲{}", green, bright_cyan, green, reset),
+        format!(
+            "{}   │ {}═════════{} │{}",
+            green, bright_green, green, reset
+        ),
+        format!(
+            "{}   │ {}║       ║{} │{}",
+            green, bright_green, green, reset
+        ),
+        format!("{}   │ {}║  ▓▓▓  ║{} │{}", green, cyan, green, reset),
+        format!("{}  ╱══╧═══════╧══╲{}", green, reset),
+        format!(
+            "{} │  {}┌─────────┐{}  │{}",
+            green, bright_green, green, reset
+        ),
+        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
+        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
+        format!("{} │  {}│  ▒▒▒▒▒  │{}  │{}", green, cyan, green, reset),
+        format!(
+            "{} │  {}╰─────────╯{}  │{}",
+            green, bright_green, green, reset
+        ),
+        format!("{}╱══════════════════╲{}", green, reset),
+        format!("{}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{}", green, reset),
+        String::new(),
+    ]
 }
 
 fn format_time_display(hhmm: u16) -> String {

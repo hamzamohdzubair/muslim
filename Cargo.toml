@@ -1,6 +1,6 @@
 [package]
 name = "muslim"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 edition = "2024"
 authors = ["Hamza Zubair <hamzamohdzubair.com>"]
 description = "A CLI tool for managing Islamic prayer times"
