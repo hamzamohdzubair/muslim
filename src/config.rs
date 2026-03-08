@@ -45,8 +45,7 @@ pub fn load_config() -> Result<Config> {
     let contents = fs::read_to_string(&config_path)
         .with_context(|| format!("Failed to read config file: {}", config_path.display()))?;
 
-    let config: Config = toml::from_str(&contents)
-        .context("Failed to parse config file")?;
+    let config: Config = toml::from_str(&contents).context("Failed to parse config file")?;
 
     Ok(config)
 }
@@ -57,8 +56,12 @@ pub fn create_default_config() -> Result<()> {
     let config_path = config_dir.join("main.toml");
 
     // Create config directory if it doesn't exist
-    fs::create_dir_all(&config_dir)
-        .with_context(|| format!("Failed to create config directory: {}", config_dir.display()))?;
+    fs::create_dir_all(&config_dir).with_context(|| {
+        format!(
+            "Failed to create config directory: {}",
+            config_dir.display()
+        )
+    })?;
 
     // Write default config
     fs::write(&config_path, DEFAULT_CONFIG)

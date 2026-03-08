@@ -109,10 +109,7 @@ mod tests {
 
     #[test]
     fn test_parse_time() {
-        assert_eq!(
-            parse_time(0530),
-            NaiveTime::from_hms_opt(5, 30, 0).unwrap()
-        );
+        assert_eq!(parse_time(0530), NaiveTime::from_hms_opt(5, 30, 0).unwrap());
         assert_eq!(
             parse_time(1245),
             NaiveTime::from_hms_opt(12, 45, 0).unwrap()
